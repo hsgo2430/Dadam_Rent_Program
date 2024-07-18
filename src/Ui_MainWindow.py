@@ -9,9 +9,11 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QPixmap
 
 
 class Ui_MainWindow(object):
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1197, 1004)
@@ -293,7 +295,8 @@ class Ui_MainWindow(object):
         self.label_2.setFrameShape(QtWidgets.QFrame.Box)
         self.label_2.setFrameShadow(QtWidgets.QFrame.Raised)
         self.label_2.setText("")
-        self.label_2.setPixmap(QtGui.QPixmap(":/newPrefix/dadam.png"))
+        self.label_2.setPixmap(QtGui.QPixmap("C:/Users/hsgo2/Dadam/Dadam_Rent_Program/dadamImage/dadam.png"))
+        #이미지 경로 설정
         self.label_2.setObjectName("label_2")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -303,6 +306,8 @@ class Ui_MainWindow(object):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+
+        self.setup_table_widget()
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -353,3 +358,12 @@ class Ui_MainWindow(object):
         self.applyNumberTv.setText(_translate("MainWindow", "신청번호"))
         self.receptionistTv.setText(_translate("MainWindow", "접수자"))
         self.applyBtn.setText(_translate("MainWindow", "신청하기"))
+
+    def setup_table_widget(self):
+        # 열 크기 조정 모드 설정
+        self.checkLicenseTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+
+        # 각 열의 너비 설정
+        self.checkLicenseTable.setColumnWidth(0, 180)  # 장비명 열
+        self.checkLicenseTable.setColumnWidth(1, 180)  # 취득날짜 열
+        self.checkLicenseTable.setColumnWidth(2, 98)  # 신청 열
