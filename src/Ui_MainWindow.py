@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sqlite3
-
+import configparser
 # Form implementation generated from reading ui file 'ui.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
@@ -12,12 +12,30 @@ import sqlite3
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox
 
+from src.NotionDataFetcher import NotionDataFetcher
+
 
 class Ui_MainWindow(object):
 
+    def __init__(self):
+        self.config = configparser.ConfigParser()
+        with open('config.ini', 'r', encoding='utf-8') as configfile:
+            self.config.read_file(configfile)
+
+        token = self.config['DEFAULT']['NotionToken']
+        print(token)
+        database_id = self.config['DEFAULT']['DatabaseID']
+        print(database_id)
+
+        self.ndf = NotionDataFetcher(token, database_id)
+        self.studentId = ""
+        self.studentName = None
+        self.data = None
+        self.db_path = '../db/license.db'
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1197, 1004)
+        MainWindow.resize(1197, 940)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -84,9 +102,10 @@ class Ui_MainWindow(object):
         font.setFamily("맑은 고딕")
         self.statusComboBox.setFont(font)
         self.statusComboBox.setObjectName("statusComboBox")
-        self.statusComboBox.addItem("")
-        self.statusComboBox.addItem("")
-        self.statusComboBox.addItem("")
+        self.statusComboBox.addItem("학부생")
+        self.statusComboBox.addItem("대학원생")
+        self.statusComboBox.addItem("교직원")
+
         self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.statusComboBox)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         self.formLayout.setItem(5, QtWidgets.QFormLayout.FieldRole, spacerItem1)
@@ -302,16 +321,19 @@ class Ui_MainWindow(object):
         self.formLayout_5.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.receptionistTv)
         spacerItem9 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.formLayout_5.setItem(1, QtWidgets.QFormLayout.FieldRole, spacerItem9)
+
         self.applyBtn = QtWidgets.QPushButton(self.centralwidget)
         self.applyBtn.setGeometry(QtCore.QRect(1030, 810, 121, 81))
         self.applyBtn.setObjectName("applyBtn")
+        self.applyBtn.clicked.connect(self.apply_notion)
+
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
         self.label_2.setGeometry(QtCore.QRect(270, 10, 651, 151))
         self.label_2.setFrameShape(QtWidgets.QFrame.Box)
         self.label_2.setFrameShadow(QtWidgets.QFrame.Raised)
         self.label_2.setText("")
         self.label_2.setPixmap(QtGui.QPixmap("C:/Users/hsgo2/Dadam/Dadam_Rent_Program/dadamImage/dadam.png"))
-        #이미지 경로 설정
+        # 이미지 경로 설정
         self.label_2.setObjectName("label_2")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -340,6 +362,7 @@ class Ui_MainWindow(object):
         self.statusComboBox.setItemText(0, _translate("MainWindow", "학부생"))
         self.statusComboBox.setItemText(1, _translate("MainWindow", "대학원생"))
         self.statusComboBox.setItemText(2, _translate("MainWindow", "교직원"))
+
         self.majorTv.setText(_translate("MainWindow", "학부"))
         self.majorComboBox.setItemText(0, _translate("MainWindow", "기계"))
         self.majorComboBox.setItemText(1, _translate("MainWindow", "디자인건축"))
@@ -349,6 +372,7 @@ class Ui_MainWindow(object):
         self.majorComboBox.setItemText(5, _translate("MainWindow", "전전통"))
         self.majorComboBox.setItemText(6, _translate("MainWindow", "컴퓨터"))
         self.majorComboBox.setItemText(7, _translate("MainWindow", "기타"))
+
         self.phoneNumberTv.setText(_translate("MainWindow", "연락처"))
         self.label.setText(_translate("MainWindow", "신청자 정보"))
         self.YesLicenseTv.setText(_translate("MainWindow", "장비(라이센스 O)"))
@@ -387,16 +411,23 @@ class Ui_MainWindow(object):
 
     def check_licenses(self):
         try:
-            student_id = self.studentIdEditText.toPlainText()
+            self.studentId = self.studentIdEditText.toPlainText()
+            print(self.statusComboBox.currentText())
 
-            if student_id == "":
+            if self.studentId == "":
                 QMessageBox.critical(None, '오류', '학번을 입력해 주세요.')
             else:
-                conn = sqlite3.connect('../db/license.db')
+                conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
 
+                # 이름 조회
+                cursor.execute('SELECT 이름 FROM student WHERE 학번 = ?', (self.studentId,))
+                student_name = cursor.fetchone()
+                if student_name:
+                    self.studentName = student_name[0]
+
                 # 장비 정보 조회
-                cursor.execute('SELECT 구분, 날짜 FROM license WHERE 학번 = ?', (student_id,))
+                cursor.execute('SELECT 구분, 날짜 FROM license WHERE 학번 = ?', (self.studentId,))
                 rows = cursor.fetchall()
                 conn.close()
 
@@ -421,9 +452,50 @@ class Ui_MainWindow(object):
     def apply_license(self, row, column):
         try:
             if column == 2:  # 신청 열이 클릭되었을 때
-                equipment_name = self.checkLicenseTable.item(row, 0).text()
-                self.YesLicenseEditText.setPlainText(equipment_name)
-                print(f'equipment_name은 {equipment_name}')
+
+                if self.studentId != self.studentIdEditText.toPlainText():
+                    self.checkLicenseTable.clearContents()
+                    QMessageBox.critical(None, '오류', '라이센스를 보유한 학번과 입력된 학번이 다릅니다.')
+                else:
+                    equipment_name = self.checkLicenseTable.item(row, 0).text()
+                    self.YesLicenseEditText.setPlainText(equipment_name)
 
         except Exception as e:
             QMessageBox.critical(None, '오류', f'라이센스를 신청하는 중 오류가 발생했습니다: {str(e)}')
+
+    def apply_notion(self):
+        if self.studentName == self.nameEditText.toPlainText():
+            success = self.ndf.send_to_notion(
+                apply_number=self.textEdit.toPlainText(),
+                student_id=self.studentIdEditText.toPlainText(),
+                name=self.nameEditText.toPlainText(),
+                major=self.majorComboBox.currentText(),
+                status=self.statusComboBox.currentText(),
+                license_info=self.YesLicenseEditText.toPlainText(),
+                no_license_info=self.noLicenseComboBox.currentText(),
+                first_ingredient=self.firstIngredientEditText.toPlainText(),
+                detailed_classification=self.comboBox_2.currentText(),
+                purpose=self.purposeEditText.toPlainText(),
+                second_ingredient=self.secondIngredientEditText.toPlainText(),
+                third_ingredient=self.thirdIngredientEditText.toPlainText(),
+                receptionist=self.receptionistEditText.toPlainText()
+            )
+            print(f'success는 {success}')
+            if success:
+                self.clear_window()
+                QMessageBox.information(None, '성공', f'대여자의 정보가 Notion에 성공적으로 전송되었습니다.')
+            else:
+                QMessageBox.critical(None, '오류', 'Notion 전송 중 오류가 발생했습니다.')
+        else:
+            QMessageBox.critical(None, '오류', '라이센스 보유자의 이름과 입력된 학생 이름이 다릅니다.')
+
+    def clear_window(self):
+        self.nameEditText.clear()
+        self.studentIdEditText.clear()
+        self.phoneNumberEditText.clear()
+        self.YesLicenseEditText.clear()
+        self.firstIngredientEditText.clear()
+        self.secondIngredientEditText.clear()
+        self.thirdIngredientEditText.clear()
+        self.purposeEditText.clear()
+        self.checkLicenseTable.clearContents()
