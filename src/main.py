@@ -1,7 +1,7 @@
 import os
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
-from Ui_MainWindow import Ui_MainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from ui import Ui_MainWindow
 
 
 def suppress_qt_warnings():  # 해상도별 글자크기 강제 고정하는 함수
@@ -13,8 +13,8 @@ def suppress_qt_warnings():  # 해상도별 글자크기 강제 고정하는 함
 if __name__ == "__main__":
 
     suppress_qt_warnings()
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
+    app = QApplication(sys.argv)
+    MainWindow = QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()

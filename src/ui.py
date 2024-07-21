@@ -12,7 +12,12 @@ import configparser
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox
 
-from src.NotionDataFetcher import NotionDataFetcher
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
+
+from NotionDataFetcher import NotionDataFetcher
 
 
 class Ui_MainWindow(object):
@@ -32,6 +37,7 @@ class Ui_MainWindow(object):
         self.studentName = None
         self.data = None
         self.db_path = '../db/license.db'
+        self.image_path = '../dadamImage/dadam.png'
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -332,7 +338,7 @@ class Ui_MainWindow(object):
         self.label_2.setFrameShape(QtWidgets.QFrame.Box)
         self.label_2.setFrameShadow(QtWidgets.QFrame.Raised)
         self.label_2.setText("")
-        self.label_2.setPixmap(QtGui.QPixmap("C:/Users/hsgo2/Dadam/Dadam_Rent_Program/dadamImage/dadam.png"))
+        self.label_2.setPixmap(QtGui.QPixmap(self.image_path))
         # 이미지 경로 설정
         self.label_2.setObjectName("label_2")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -353,7 +359,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "공구대여 프로그램"))
         self.nameTv.setText(_translate("MainWindow", "이름"))
 
         self.studentIdTv.setText(_translate("MainWindow", "학번"))
